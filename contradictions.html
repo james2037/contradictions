@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Town of Salem Notebook</title>
+        <script>
+            "use strict";
+            function SalemTeam(name) {
+                this.name = name;
+            }
+
+            function SalemAlignment(name, team) {
+                this.name = name;
+                this.team = team;
+            }
+
+            function SalemRole(name, alignment, unique) {
+                this.name = name;
+                this.alignment = alignment;
+                this.unique = unique ? true : false;
+            }
+
+            function SalemInvestigatorResult(label, inferredRoles) {
+                this.label = label;
+                this.roles = roles;
+            }
+
+            function SalemSheriffResult(label, inferredRoles) {
+                this.label = label;
+                this.roles = roles;
+            }
+
+            function SalemLookoutReport(lookout_player, visiting_players) {
+                this.lookoutPlayer = lookout_player;
+                this.visitingPlayers = visiting_players;
+            }
+
+            function SalemMafiaVisitReport(spy_player, visited_players) {
+                this.spyPlayer = spy_player;
+                this.visitedPlayers = visited_players;
+            }
+
+            function SalemSlot(label, binding) {
+                this.label = label;
+                this.binding = binding;
+            }
+
+            function SalemPlayer(username, slot_number) {
+                this.username = username;
+                this.slotNumber = slot_number;
+                this.sheriffResult = null;
+                this.investigatorResult = null;
+                this.killedBy = [];
+            }
+
+            function SalemKilledBy(label, inferred_roles) {
+                this.label = label;
+                this.inferredRoles = inferred_roles;
+            }
+
+            function SalemClaim(author, subject, scope, day_made) {
+                this.author = author;
+                this.subject = subject;
+                this.scope = scope;
+                this.confirmed = false;
+                this.dayMade = day_made;
+            }
+
+            function SalemDay(number) {
+                this.number = number;
+
+                this.douseReports = [];
+                this.transReports = [];
+                this.blockReports = [];
+                this.healReports = [];
+                this.jailReports = [];
+                this.lookoutReports = [];
+                this.mafiaVisitReports = [];
+
+                this.deaths = [];
+                this.revives = [];
+                this.memories = [];
+            }
+
+            function SalemGame(slots) {
+                this.slots = slots;
+                this.players = [];
+                this.claims = [];
+                this.days = [];
+
+                this.currentDay = 1;
+
+                this._listeners = {};
+            }
+
+            SalemGame.prototype.addPlayer = function(username, slot_number) {
+                return this.players.push(new SalemPlayer(username, slot_number));
+            };
+
+            SalemGame.prototype.advanceDay = function() {
+                this.currentDay++;
+                this.days.push(new SalemDay(this.currentDay));
+            };
+
+            SalemGame.prototype.addEventListener = function(type, listener) {
+                if (type in this._listeners) this._listeners[type].push(listener);
+                else this._listeners[type] = [listener];
+            };
+
+            SalemGame.prototype.dispatchEvent = function(event) {
+                if (this._listeners[event.type]) {
+                    this._listeners.forEach(function(listener) {
+                        listener.apply(this, event);
+                    }, this);
+                }
+
+                return true;
+            };
+
+            SalemGame.prototype.removeEventListener = function(type, listener) {
+                if (listener === undefined) {
+                    delete this._listeners[type];
+                    return;
+                }
+
+                this._listeners = this._listeners.filter(function(chkListener) {
+                    return chkListener !== listener;
+                });
+            };
+
+            SalemGame.prototype.getContradictions = function() {
+                // TO DO: SPECIAL SAUCE HERE.
+            };
+
+            window.salem = {
+                teams: {
+                    town: new SalemTeam("Town"),
+                    neutral: new SalemTeam("Neutral"),
+                    mafia: new SalemTeam("Mafia")
+                }
+            };
+
+            window.salem.alignments = {
+                ti: new SalemAlignment("Town Investigative", window.salem.teams.town),
+                tk: new SalemAlignment("Town Killing", window.salem.teams.town),
+                tp: new SalemAlignment("Town Protective", window.salem.teams.town),
+                ts: new SalemAlignment("Town Support", window.salem.teams.town),
+                nb: new SalemAlignment("Neutral Benign", window.salem.teams.neutral),
+                ne: new SalemAlignment("Neural Evil", window.salem.teams.neutral),
+                nk: new SalemAlignment("Neutral Killing", window.salem.teams.neutral),
+                nc: new SalemAlignment("Neutral Chaos", window.salem.teams.neutral),
+                md: new SalemAlignment("Mafia Deception", window.salem.teams.mafia),
+                mk: new SalemAlignment("Mafia Killing", window.salem.teams.mafia),
+                ms: new SalemAlignment("Mafia Support", window.salem.teams.mafia)
+            };
+
+            window.salem.roles = {
+                inv: new SalemRole("Investigator", window.salem.alignments.ti),
+                lo:  new SalemRole("Lookout", window.salem.alignments.ti),
+                shf: new SalemRole("Sheriff", window.salem.alignments.ti),
+                spy: new SalemRole("Spy", window.salem.alignments.ti),
+                jlr: new SalemRole("Jailor", window.salem.alignments.tk, true),
+                vet: new SalemRole("Veteran", window.salem.alignments.tk, true),
+                vig: new SalemRole("Vigilante", window.salem.alignments.tk),
+                vh:  new SalemRole("Vampire Hunter", window.salem.alignments.tk),
+                bg:  new SalemRole("Bodyguard", window.salem.alignments.tp),
+                doc: new SalemRole("Doctor", window.salem.alignments.tp),
+                esc: new SalemRole("Escort", window.salem.alignments.ts),
+                may: new SalemRole("Mayor", window.salem.alignments.ts, true),
+                med: new SalemRole("Medium", window.salem.alignments.ts),
+                ret: new SalemRole("Retributionist", window.salem.alignments.ts, true),
+                trn: new SalemRole("Transporter", window.salem.alignments.ts),
+                amn: new SalemRole("Amnesiac", window.salem.alignments.nb),
+                sur: new SalemRole("Survivor", window.salem.alignments.nb),
+                exe: new SalemRole("Executioner", window.salem.alignments.ne),
+                jes: new SalemRole("Jester", window.salem.alignments.ne),
+                wit: new SalemRole("Witch", window.salem.alignments.ne),
+                ars: new SalemRole("Arsonist", window.salem.alignments.nk),
+                sk:  new SalemRole("Serial Killer", window.salem.alignments.nk),
+                ww:  new SalemRole("Werewolf", window.salem.alignments.nk, true),
+                vam: new SalemRole("Vampire", window.salem.alignments.nc),
+                dis: new SalemRole("Disguiser", window.salem.alignments.md),
+                frg: new SalemRole("Forger", window.salem.alignments.md),
+                frm: new SalemRole("Framer", window.salem.alignments.md),
+                jan: new SalemRole("Janitor", window.salem.alignments.md),
+                god: new SalemRole("Godfather", window.salem.alignments.mk, true),
+                maf: new SalemRole("Mafioso", window.salem.alignments.mk, true),
+                bm:  new SalemRole("Blackmailer", window.salem.alignments.ms, true),
+                csg: new SalemRole("Consigliere", window.salem.alignments.ms),
+                cst: new SalemRole("Consort", window.salem.alignments.ms)
+            };
+
+            function contradictionsUI(elem) {
+                this.initDOM(elem);
+                this.game = null;
+            };
+
+            contradictionsUI.prototype.initDOM = function(elem) {
+                var thisUI = this;
+
+                var newGameButtons = elem.getElementsByClassName("new-game");
+                for (var i = 0; i < newGameButtons.length; i++) {
+                    newGameButtons[i].addEventListener("click", function(event) {
+                        if (thisUI.game && !window.confirm("Start a new game?")) return;
+                        thisUI.newGame();
+                    });
+                }
+            };
+
+            contradictionsUI.prototype.newGame = function() {
+                this.game = new SalemGame();
+            }
+
+            document.addEventListener("DOMContentLoaded", function(event) {
+                window.contradictionsUI = new contradictionsUI(document);
+            });
+        </script>
+    </head>
+    <body>
+        <button type="button" class="new-game">New Game</button>
+    </body>
+</html>
